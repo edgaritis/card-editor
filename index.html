@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1a1a1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Card Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<style>
+:root {
+  --page-bg: #e2e2df;
+  --panel-bg: #ffffff;
+  --border: #e5e4e2;
+  --border-strong: #d5d4d2;
+  --text: #1a1a1a;
+  --text-mute: #6b6b6b;
+  --accent-app: #d97706;
+  --accent-hover: #b85f04;
+  --danger: #dc2626;
+  --radius: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--page-bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* WINDOW CONTAINER */
+.app-window {
+  width: 100%;
+  max-width: 1280px;
+  height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
+  max-height: 820px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+.app-header {
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.app-header h1 {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+.app-header .subtitle {
+  color: var(--text-mute);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 10px;
+}
+.header-actions { display: flex; gap: 8px; }
+
+.btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: white;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: #f5f5f4; }
+.btn-primary {
+  background: var(--accent-app);
+  color: white;
+  border-color: var(--accent-app);
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.6; cursor: wait; }
+.btn-full { width: 100%; }
+
+/* MAIN APP LAYOUT */
+.app {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  min-height: 0;
+}
+.controls {
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 18px;
+}
+.preview-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.preview-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 0;
+  background-color: #e8e8e5;
+  background-image:
+    linear-gradient(45deg, #d4d4d0 25%, transparent 25%),
+    linear-gradient(-45deg, #d4d4d0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d4d4d0 75%),
+    linear-gradient(-45deg, transparent 75%, #d4d4d0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  overflow: hidden;
+}
+.preview-stage { position: relative; }
+.preview-info {
+  background: var(--panel-bg);
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  font-size: 11px;
+  color: var(--text-mute);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.preview-info strong { color: var(--text); font-weight: 700; }
+
+/* CONTROL SECTIONS */
+.section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.section-title {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 10px;
+}
+.control { margin-bottom: 10px; }
+.control:last-child { margin-bottom: 0; }
+.control-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.control-label .value {
+  font-weight: 400;
+  color: var(--text-mute);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+/* INPUTS */
+textarea, input[type=text], input[type=number] {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--text);
+  line-height: 1.45;
+}
+textarea {
+  resize: vertical;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+}
+textarea:focus, input:focus { outline: none; border-color: var(--accent-app); }
+
+/* Case transform buttons */
+.case-btns { display: flex; gap: 4px; margin-top: 4px; }
+.case-btn {
+  font-family: inherit; font-size: 11px; padding: 2px 8px;
+  background: var(--panel-bg); border: 1px solid var(--border);
+  border-radius: 3px; cursor: pointer; color: var(--text-mute);
+  line-height: 1.4;
+}
+.case-btn:hover { background: #f0efed; color: var(--text); border-color: var(--border-strong); }
+
+input[type=range] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-app);
+  border-radius: 50%;
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent-app);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* SEGMENTED CONTROL (mode tabs) */
+.seg-control {
+  display: flex;
+  background: #f0f0ee;
+  border-radius: var(--radius);
+  padding: 2px;
+  margin-bottom: 10px;
+  gap: 0;
+}
+.seg-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mute);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.3px;
+}
+.seg-btn.active {
+  background: white;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.seg-btn:not(.active):hover { color: var(--text); }
+
+/* THEME PRESET BUTTONS */
+.theme-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.theme-btn {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 10px 6px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.theme-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+.theme-btn-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.theme-btn-label { color: var(--text); }
+.theme-light { background: #fafaf5; }
+.theme-light .theme-btn-swatch { background: #fafaf5; border: 1px solid #ddd; }
+.theme-dark { background: #1a1a1a; }
+.theme-dark .theme-btn-swatch { background: #000; }
+.theme-dark .theme-btn-label { color: #fff; }
+.theme-dark-accent { background: #0a0a0a; }
+.theme-dark-accent .theme-btn-swatch { background: linear-gradient(135deg, #000 0%, #000 50%, #f5a623 50%, #f5a623 100%); }
+.theme-dark-accent .theme-btn-label { color: #fff; }
+
+/* SIZE PRESETS */
+.preset-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.preset-btn {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+.preset-btn:hover { background: #f5f5f4; }
+.preset-btn.active {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+.size-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+.size-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.size-input-group label {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-weight: 700;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+/* COLOR CONTROLS */
+.color-swatches {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease;
+}
+.color-swatch:hover { transform: scale(1.12); }
+.color-swatch.active {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent-app);
+}
+.color-row { display: flex; gap: 6px; align-items: center; }
+.color-hex {
+  flex: 1;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+input[type=color] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 38px;
+  height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: white;
+  cursor: pointer;
+  padding: 2px;
+  flex-shrink: 0;
+}
+input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type=color]::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+/* GRADIENT PRESETS */
+.gradient-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.gradient-preset {
+  height: 28px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease;
+}
+.gradient-preset:hover { transform: scale(1.05); }
+.gradient-preset.active {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent-app);
+}
+.bg-gradient-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.bg-gradient-presets .gradient-preset { height: 36px; }
+
+.gradient-mini-label {
+  font-size: 10px;
+  color: var(--text-mute);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+
+/* IMAGE UPLOAD UI */
+.image-upload-area {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.image-upload-area:hover { border-color: var(--accent-app); background: #fafaf8; }
+.image-upload-area p {
+  font-size: 12px;
+  color: var(--text-mute);
+}
+.image-upload-area .upload-icon {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 4px;
+}
+.image-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f5f5f4;
+  border-radius: var(--radius);
+}
+.image-thumb {
+  width: 48px;
+  height: 48px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+}
+.image-info {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-mute);
+}
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--text-mute);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+  text-decoration: underline;
+}
+.btn-text:hover { color: var(--danger); }
+
+/* CARD (THE LIVE PREVIEW) */
+.card {
+  font-family: 'Lato', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  position: relative;
+}
+.card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+.card > .card-title,
+.card > .card-body,
+.card > .card-watermark {
+  position: relative;
+  z-index: 1;
+}
+.card-title {
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+}
+.card-title:empty { display: none; }
+.card-title.is-gradient {
+  background: var(--card-title-gradient, linear-gradient(135deg, #f5a623, #d97706));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.card-body {
+  font-weight: 400;
+  line-height: 1.45;
+  flex: 1;
+}
+.card-body:empty { display: none; }
+.card-body p { margin: 0 0 0.7em 0; }
+.card-body p:last-child { margin-bottom: 0; }
+.card-body ol {
+  list-style-position: outside;
+  padding-left: 1.4em;
+  margin: 0;
+}
+.card-body ol li { margin-bottom: 0.7em; }
+.card-body ol li:last-child { margin-bottom: 0; }
+.card-body ol li::marker {
+  font-weight: 400;
+}
+.card-body strong { font-weight: 900; }
+
+.card-watermark {
+  font-weight: 400;
+  text-align: center;
+  opacity: 0.55;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+  word-wrap: break-word;
+  flex-shrink: 0;
+}
+.card-watermark:empty { display: none; }
+
+.image-adjustments {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* HINT */
+.hint {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.hint code {
+  background: #f0f0ee;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  top: 50px;
+  right: 50px;
+  background: var(--text);
+  color: white;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  z-index: 100;
+  max-width: 320px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast.error { background: var(--danger); }
+
+/* TABLET LAYOUT */
+@media (max-width: 900px) {
+  body { padding: 16px; }
+  .app-window {
+    max-height: none;
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-area {
+    order: -1;
+    height: 38vh;
+    min-height: 220px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .controls {
+    flex: 1;
+    min-height: 0;
+    border-right: none;
+  }
+}
+
+/* PHONE LAYOUT */
+@media (max-width: 600px) {
+  body {
+    padding: 0;
+    background: white;
+  }
+  .app-window {
+    border-radius: 0;
+    box-shadow: none;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+  }
+  .app-header {
+    padding: 10px 14px;
+  }
+  .app-header h1 { font-size: 14px; }
+  .app-header .subtitle { display: none; }
+  .header-actions { gap: 6px; }
+  .header-actions .btn {
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+  .controls { padding: 14px; }
+  .section { margin-bottom: 18px; padding-bottom: 18px; }
+  /* iOS no-zoom */
+  textarea,
+  input[type=text],
+  input[type=number],
+  .color-hex {
+    font-size: 16px;
+    padding: 9px;
+  }
+  .color-swatch { width: 30px; height: 30px; }
+  input[type=color] { width: 42px; height: 36px; }
+  .seg-btn { padding: 8px 6px; font-size: 11px; }
+  .preset-btn { padding: 8px 6px; }
+  input[type=range]::-webkit-slider-thumb { width: 18px; height: 18px; }
+  input[type=range]::-moz-range-thumb { width: 18px; height: 18px; }
+  .preview-area { height: 34vh; min-height: 190px; }
+  .preview-wrap { padding: 14px; }
+  .preview-info { padding: 7px 14px; font-size: 10px; gap: 12px; }
+  .toast {
+    top: 56px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    text-align: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app-window">
+
+  <header class="app-header">
+    <h1>Card Editor<span class="subtitle">Compose, style, export PNG</span></h1>
+    <div class="header-actions">
+      <button class="btn" id="reset-btn">Reset</button>
+      <button class="btn btn-primary" id="export-btn">Export PNG</button>
+    </div>
+  </header>
+
+  <div class="app">
+
+    <aside class="controls">
+
+      <div class="section">
+        <div class="section-title">Theme presets</div>
+        <div class="theme-row">
+          <button class="theme-btn theme-light" data-theme="light">
+            <span class="theme-btn-swatch"></span>
+            <span class="theme-btn-label">Light</span>
+          </button>
+          <button class="theme-btn theme-dark" data-theme="dark">
+            <span class="theme-btn-swatch"></span>
+            <span class="theme-btn-label">Dark</span>
+          </button>
+          <button class="theme-btn theme-dark-accent" data-theme="dark-accent">
+            <span class="theme-btn-swatch"></span>
+            <span class="theme-btn-label">Dark Accent</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Content</div>
+        <div class="control">
+          <div class="control-label">Title</div>
+          <textarea id="title-input" rows="3" placeholder="ENTER TITLE HERE"></textarea>
+          <div class="case-btns">
+            <button class="case-btn" onclick="transformCase('title','upper')">UPPER</button>
+            <button class="case-btn" onclick="transformCase('title','lower')">lower</button>
+            <button class="case-btn" onclick="transformCase('title','sentence')">Sentence</button>
+            <button class="case-btn" onclick="transformCase('title','title')">Title Case</button>
+          </div>
+        </div>
+        <div class="control">
+          <div class="control-label">Body</div>
+          <textarea id="body-input" rows="12" placeholder="1. **Bold claim** - consequence."></textarea>
+          <div class="case-btns">
+            <button class="case-btn" onclick="transformCase('body','upper')">UPPER</button>
+            <button class="case-btn" onclick="transformCase('body','lower')">lower</button>
+            <button class="case-btn" onclick="transformCase('body','sentence')">Sentence</button>
+            <button class="case-btn" onclick="transformCase('body','title')">Title Case</button>
+          </div>
+          <div class="hint">Use <code>**text**</code> for bold (accent color). Use <code>1.</code> <code>2.</code> for numbered list. Press <code>Ctrl/⌘ + B</code> with text selected to wrap.</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Style</div>
+        <div class="control">
+          <div class="control-label">Title size <span class="value" id="title-size-val">64px</span></div>
+          <input type="range" id="title-size" min="24" max="140" step="1" value="64">
+        </div>
+        <div class="control">
+          <div class="control-label">Body size <span class="value" id="body-size-val">28px</span></div>
+          <input type="range" id="body-size" min="12" max="70" step="1" value="28">
+        </div>
+        <div class="control">
+          <div class="control-label">Title–body spacing <span class="value" id="title-body-gap-val">32px</span></div>
+          <input type="range" id="title-body-gap" min="0" max="150" step="2" value="32">
+        </div>
+        <div class="control">
+          <div class="control-label">Padding <span class="value" id="padding-val">72px</span></div>
+          <input type="range" id="padding" min="20" max="250" step="2" value="72">
+        </div>
+        <div class="control">
+          <div class="control-label">Corner radius <span class="value" id="radius-val">0px</span></div>
+          <input type="range" id="border-radius" min="0" max="100" step="1" value="0">
+        </div>
+        <div class="control">
+          <div class="control-label">Title alignment</div>
+          <div class="seg-control" data-seg="title-align">
+            <button class="seg-btn" data-value="left">Left</button>
+            <button class="seg-btn" data-value="center">Center</button>
+            <button class="seg-btn" data-value="right">Right</button>
+            <button class="seg-btn" data-value="justify">Justify</button>
+          </div>
+        </div>
+        <div class="control">
+          <div class="control-label">Body alignment</div>
+          <div class="seg-control" data-seg="body-align">
+            <button class="seg-btn" data-value="left">Left</button>
+            <button class="seg-btn" data-value="center">Center</button>
+            <button class="seg-btn" data-value="right">Right</button>
+            <button class="seg-btn" data-value="justify">Justify</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Watermark</div>
+        <div class="control">
+          <input type="text" id="watermark-input" maxlength="80" placeholder="Your brand or channel">
+          <div class="hint">Appears at the bottom of the card. Leave empty to hide.</div>
+        </div>
+        <div class="control">
+          <div class="control-label">Size <span class="value" id="watermark-size-val">18px</span></div>
+          <input type="range" id="watermark-size" min="10" max="48" step="1" value="18">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Size</div>
+        <div class="preset-row" id="size-presets">
+          <button class="preset-btn" data-w="1080" data-h="1080">1:1 Square</button>
+          <button class="preset-btn" data-w="1080" data-h="1350">4:5 Portrait</button>
+          <button class="preset-btn" data-w="1080" data-h="1920">9:16 Story</button>
+          <button class="preset-btn" data-w="1200" data-h="630">1.91:1 Landscape</button>
+        </div>
+        <div class="size-inputs">
+          <div class="size-input-group">
+            <label>W</label>
+            <input type="number" id="width-input" min="100" max="4000" step="10">
+          </div>
+          <div class="size-input-group">
+            <label>H</label>
+            <input type="number" id="height-input" min="100" max="4000" step="10">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Background</div>
+        <div class="seg-control" data-seg="bg-mode">
+          <button class="seg-btn" data-value="solid">Solid</button>
+          <button class="seg-btn" data-value="gradient">Gradient</button>
+          <button class="seg-btn" data-value="image">Image</button>
+        </div>
+
+        <div class="control">
+          <div class="control-label">Opacity <span class="value" id="bg-opacity-val">100%</span></div>
+          <input type="range" id="bg-opacity" min="0" max="100" step="1" value="100">
+          <div class="hint">Set to 0% to export transparent background (text only).</div>
+        </div>
+
+        <div class="mode-panel" data-panel="bg-solid">
+          <div class="color-swatches" id="bg-swatches"></div>
+          <div class="color-row">
+            <input type="text" class="color-hex" id="bg-hex" maxlength="7">
+            <input type="color" id="bg-picker">
+          </div>
+        </div>
+
+        <div class="mode-panel" data-panel="bg-gradient" style="display:none">
+          <div class="bg-gradient-presets" id="bg-gradient-presets"></div>
+          <div class="gradient-mini-label">Start color</div>
+          <div class="color-row">
+            <input type="text" class="color-hex" id="bg-grad-start-hex" maxlength="7">
+            <input type="color" id="bg-grad-start-picker">
+          </div>
+          <div class="gradient-mini-label">End color</div>
+          <div class="color-row">
+            <input type="text" class="color-hex" id="bg-grad-end-hex" maxlength="7">
+            <input type="color" id="bg-grad-end-picker">
+          </div>
+          <div class="control" style="margin-top:8px">
+            <div class="control-label">Angle <span class="value" id="bg-grad-angle-val">135°</span></div>
+            <input type="range" id="bg-grad-angle" min="0" max="360" value="135">
+          </div>
+        </div>
+
+        <div class="mode-panel" data-panel="bg-image" style="display:none">
+          <input type="file" id="bg-image-input" accept="image/*" style="display:none">
+          <div class="image-upload-area" id="image-upload-area">
+            <span class="upload-icon">⬆</span>
+            <p>Click to upload image<br><span style="font-size:10px">JPG/PNG, will be cropped to fit</span></p>
+          </div>
+          <div class="image-preview" id="image-preview" style="display:none">
+            <div class="image-thumb" id="image-thumb"></div>
+            <div class="image-info" id="image-info">Image loaded</div>
+            <button class="btn-text" id="bg-image-remove">Remove</button>
+          </div>
+          <div class="image-adjustments" id="image-adjustments" style="display:none">
+            <div class="control">
+              <div class="control-label">Zoom <span class="value" id="img-zoom-val">100%</span></div>
+              <input type="range" id="img-zoom" min="50" max="300" step="5" value="100">
+            </div>
+            <div class="control">
+              <div class="control-label">Horizontal <span class="value" id="img-posx-val">50%</span></div>
+              <input type="range" id="img-posx" min="0" max="100" step="1" value="50">
+            </div>
+            <div class="control">
+              <div class="control-label">Vertical <span class="value" id="img-posy-val">50%</span></div>
+              <input type="range" id="img-posy" min="0" max="100" step="1" value="50">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Title color</div>
+        <div class="seg-control" data-seg="title-mode">
+          <button class="seg-btn" data-value="solid">Solid</button>
+          <button class="seg-btn" data-value="gradient">Gradient</button>
+        </div>
+
+        <div class="mode-panel" data-panel="title-solid">
+          <div class="color-swatches" id="title-swatches"></div>
+          <div class="color-row">
+            <input type="text" class="color-hex" id="title-hex" maxlength="7">
+            <input type="color" id="title-picker">
+          </div>
+        </div>
+
+        <div class="mode-panel" data-panel="title-gradient" style="display:none">
+          <div class="gradient-presets" id="title-gradient-presets"></div>
+          <div class="gradient-mini-label">Start color</div>
+          <div class="color-row">
+            <input type="text" class="color-hex" id="title-grad-start-hex" maxlength="7">
+            <input type="color" id="title-grad-start-picker">
+          </div>
+          <div class="gradient-mini-label">End color</div>
+          <div class="color-row">
+            <input type="text" class="color-hex" id="title-grad-end-hex" maxlength="7">
+            <input type="color" id="title-grad-end-picker">
+          </div>
+          <div class="control" style="margin-top:8px">
+            <div class="control-label">Angle <span class="value" id="title-grad-angle-val">135°</span></div>
+            <input type="range" id="title-grad-angle" min="0" max="360" value="135">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Body color</div>
+        <div class="color-swatches" id="body-swatches"></div>
+        <div class="color-row">
+          <input type="text" class="color-hex" id="body-hex" maxlength="7">
+          <input type="color" id="body-picker">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Accent (bold text)</div>
+        <div class="color-swatches" id="accent-swatches"></div>
+        <div class="color-row">
+          <input type="text" class="color-hex" id="accent-hex" maxlength="7">
+          <input type="color" id="accent-picker">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Export</div>
+        <div class="control">
+          <div class="control-label">Quality <span class="value" id="quality-detail">2160 × 2700 PNG</span></div>
+          <div class="seg-control" data-seg="export-quality">
+            <button class="seg-btn" data-value="0.5">½×</button>
+            <button class="seg-btn" data-value="1">1×</button>
+            <button class="seg-btn active" data-value="2">2×</button>
+          </div>
+          <div class="hint">Higher = larger file, sharper image.</div>
+        </div>
+      </div>
+
+    </aside>
+
+    <main class="preview-area">
+      <div class="preview-wrap" id="preview-wrap">
+        <div class="preview-stage" id="preview-stage">
+          <div class="card" id="card">
+            <div class="card-bg" id="card-bg"></div>
+            <h2 class="card-title" id="card-title"></h2>
+            <div class="card-body" id="card-body"></div>
+            <div class="card-watermark" id="card-watermark"></div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-info">
+        <span>Card: <strong id="card-dimensions">1080 × 1350</strong></span>
+        <span>Display: <strong id="card-scale">100%</strong></span>
+        <span>Export @ 2×: <strong id="export-dimensions">2160 × 2700</strong></span>
+      </div>
+    </main>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const DEFAULTS = {
+  title: "7 SEÑALES DE QUE ALGUIEN TE RESPETA EN SILENCIO",
+  body: `1. **Cuando hablas, los demás bajan el volumen** - tu calma manda.
+2. **Te cuentan lo que no le cuentan a nadie** - inspiras confianza sin pedirla.
+3. **Buscan tu mirada antes de decidir** - eres referencia sin saberlo.
+4. **Notan tu ausencia cuando no estás** - tu silencio también pesa.
+5. **No tienes que pedir respeto, te lo dan** - así actúan los que se ganaron el suyo.`,
+  width: 1080,
+  height: 1350,
+  bgMode: 'solid',
+  bgColor: '#000000',
+  bgGradStart: '#1a1a1a',
+  bgGradEnd: '#000000',
+  bgGradAngle: 135,
+  bgImage: null,
+  titleMode: 'solid',
+  titleColor: '#f5a623',
+  titleGradStart: '#f5a623',
+  titleGradEnd: '#d97706',
+  titleGradAngle: 135,
+  bodyColor: '#ffffff',
+  accentColor: '#f5a623',
+  titleSize: 64,
+  bodySize: 28,
+  padding: 72,
+  borderRadius: 0,
+  titleBodyGap: 32,
+  bgImageZoom: 1,
+  bgImagePosX: 50,
+  bgImagePosY: 50,
+  bgImageW: 0,
+  bgImageH: 0,
+  bgOpacity: 100,
+  titleAlign: 'left',
+  bodyAlign: 'left',
+  watermark: 'Psicología Conocida',
+  watermarkSize: 18,
+  exportQuality: 2
+};
+
+const THEMES = {
+  light: {
+    bgMode: 'solid', bgColor: '#fafaf5',
+    titleMode: 'solid', titleColor: '#1a1a1a',
+    bodyColor: '#1a1a1a',
+    accentColor: '#d97706'
+  },
+  dark: {
+    bgMode: 'solid', bgColor: '#000000',
+    titleMode: 'solid', titleColor: '#ffffff',
+    bodyColor: '#ffffff',
+    accentColor: '#f5a623'
+  },
+  'dark-accent': {
+    bgMode: 'solid', bgColor: '#000000',
+    titleMode: 'solid', titleColor: '#f5a623',
+    bodyColor: '#ffffff',
+    accentColor: '#f5a623'
+  }
+};
+
+const BG_PRESETS = ['#000000','#1a1a1a','#0a1429','#0d1f17','#fafaf5','#f5edd6'];
+const TITLE_PRESETS = ['#f5a623','#4dabf7','#ff5252','#dc2626','#ffffff','#1a1a1a'];
+const BODY_PRESETS = ['#ffffff','#e0e0e0','#f5edd6','#1a1a1a','#3a3a3a','#000000'];
+const ACCENT_PRESETS = ['#f5a623','#4dabf7','#ff5252','#dc2626','#ffffff','#1a1a1a'];
+
+const BG_GRADIENT_PRESETS = [
+  { start: '#1a1a1a', end: '#000000', angle: 135 },
+  { start: '#0a1429', end: '#000000', angle: 135 },
+  { start: '#3a0a0a', end: '#000000', angle: 135 }
+];
+
+const TITLE_GRADIENT_PRESETS = [
+  { start: '#f5a623', end: '#d97706', angle: 135 },
+  { start: '#ff5252', end: '#c62828', angle: 135 },
+  { start: '#4dabf7', end: '#1c7ed6', angle: 135 },
+  { start: '#ffffff', end: '#bfbfbf', angle: 135 }
+];
+
+const MAX_PREVIEW_SCALE = 0.5;
+const STORAGE_KEY = 'card-editor-state-v2';
+
+let state = Object.assign({}, DEFAULTS);
+
+const $ = id => document.getElementById(id);
+const card = $('card');
+const cardBg = $('card-bg');
+const cardTitle = $('card-title');
+const cardBody = $('card-body');
+const stage = $('preview-stage');
+const wrap = $('preview-wrap');
+const titleInput = $('title-input');
+const bodyInput = $('body-input');
+const widthInput = $('width-input');
+const heightInput = $('height-input');
+const titleSizeInput = $('title-size');
+const bodySizeInput = $('body-size');
+const paddingInput = $('padding');
+const borderRadiusInput = $('border-radius');
+const titleSizeVal = $('title-size-val');
+const bodySizeVal = $('body-size-val');
+const paddingVal = $('padding-val');
+const radiusVal = $('radius-val');
+const dimensionsLabel = $('card-dimensions');
+const scaleLabel = $('card-scale');
+const exportDimsLabel = $('export-dimensions');
+const exportBtn = $('export-btn');
+const resetBtn = $('reset-btn');
+const toast = $('toast');
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function parseBold(text) {
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g,
+    `<strong style="color: ${state.accentColor}; font-weight: 900">$1</strong>`);
+}
+function parseBody(text) {
+  const lines = text.split('\n');
+  const items = [];
+  let currentItem = null;
+  let currentPara = '';
+  const flushPara = () => {
+    if (currentPara.trim()) {
+      items.push({ type: 'p', content: currentPara.trim() });
+      currentPara = '';
+    }
+  };
+  const flushItem = () => {
+    if (currentItem) {
+      items.push(currentItem);
+      currentItem = null;
+    }
+  };
+  for (const line of lines) {
+    const trimmed = line.trimEnd();
+    const m = trimmed.match(/^\s*(\d+)\.\s+(.*)$/);
+    if (m) {
+      flushPara();
+      flushItem();
+      currentItem = { type: 'li', content: m[2] };
+    } else if (trimmed.trim() === '') {
+      flushPara();
+      flushItem();
+    } else {
+      const t = trimmed.trim();
+      if (currentItem) currentItem.content += ' ' + t;
+      else currentPara += (currentPara ? ' ' : '') + t;
+    }
+  }
+  flushPara();
+  flushItem();
+  let html = '';
+  let inList = false;
+  for (const it of items) {
+    if (it.type === 'li') {
+      if (!inList) {
+        const useOutside = (state.bodyAlign === 'left' || state.bodyAlign === 'justify');
+        const pos = useOutside ? 'outside' : 'inside';
+        const pad = useOutside ? '1.4em' : '0';
+        html += `<ol style="color: ${state.bodyColor}; list-style-position: ${pos}; padding-left: ${pad}; margin: 0;">`;
+        inList = true;
+      }
+      html += `<li>${parseBold(it.content)}</li>`;
+    } else {
+      if (inList) { html += '</ol>'; inList = false; }
+      html += `<p>${parseBold(it.content)}</p>`;
+    }
+  }
+  if (inList) html += '</ol>';
+  return html;
+}
+
+function buildBackgroundValue() {
+  if (state.bgMode === 'gradient') {
+    return `linear-gradient(${state.bgGradAngle}deg, ${state.bgGradStart}, ${state.bgGradEnd})`;
+  }
+  if (state.bgMode === 'image' && state.bgImage) {
+    return `url("${state.bgImage}")`;
+  }
+  return state.bgColor;
+}
+
+function render() {
+  // dimensions
+  card.style.width = state.width + 'px';
+  card.style.height = state.height + 'px';
+
+  // background — applied to the .card-bg layer so opacity (and transparency)
+  // works uniformly across solid / gradient / image without affecting text.
+  cardBg.style.background = '';
+  cardBg.style.backgroundImage = '';
+  if (state.bgMode === 'image' && state.bgImage) {
+    cardBg.style.background = state.bgColor;
+    cardBg.style.backgroundImage = `url("${state.bgImage}")`;
+    // Compute cover-equivalent base size in px, then apply zoom
+    if (state.bgImageW > 0 && state.bgImageH > 0) {
+      const imgAspect = state.bgImageW / state.bgImageH;
+      const cardAspect = state.width / state.height;
+      let coverW, coverH;
+      if (imgAspect > cardAspect) {
+        coverH = state.height;
+        coverW = state.height * imgAspect;
+      } else {
+        coverW = state.width;
+        coverH = state.width / imgAspect;
+      }
+      const sizeW = coverW * state.bgImageZoom;
+      const sizeH = coverH * state.bgImageZoom;
+      cardBg.style.backgroundSize = `${sizeW}px ${sizeH}px`;
+    } else {
+      cardBg.style.backgroundSize = 'cover';
+    }
+    cardBg.style.backgroundPosition = `${state.bgImagePosX}% ${state.bgImagePosY}%`;
+  } else if (state.bgMode === 'gradient') {
+    cardBg.style.background = `linear-gradient(${state.bgGradAngle}deg, ${state.bgGradStart}, ${state.bgGradEnd})`;
+  } else {
+    cardBg.style.background = state.bgColor;
+  }
+  cardBg.style.opacity = state.bgOpacity / 100;
+
+  // border radius
+  card.style.borderRadius = state.borderRadius + 'px';
+
+  // padding
+  card.style.padding = state.padding + 'px';
+
+  // title-body (and body-watermark) spacing
+  card.style.gap = state.titleBodyGap + 'px';
+
+  // title
+  cardTitle.textContent = state.title;
+  cardTitle.style.fontSize = state.titleSize + 'px';
+  cardTitle.style.textAlign = state.titleAlign;
+  if (state.titleMode === 'gradient') {
+    cardTitle.classList.add('is-gradient');
+    cardTitle.style.setProperty('--card-title-gradient',
+      `linear-gradient(${state.titleGradAngle}deg, ${state.titleGradStart}, ${state.titleGradEnd})`);
+    cardTitle.style.background = `linear-gradient(${state.titleGradAngle}deg, ${state.titleGradStart}, ${state.titleGradEnd})`;
+    cardTitle.style.webkitBackgroundClip = 'text';
+    cardTitle.style.backgroundClip = 'text';
+    cardTitle.style.webkitTextFillColor = 'transparent';
+    cardTitle.style.color = 'transparent';
+  } else {
+    cardTitle.classList.remove('is-gradient');
+    cardTitle.style.background = '';
+    cardTitle.style.webkitBackgroundClip = '';
+    cardTitle.style.backgroundClip = '';
+    cardTitle.style.webkitTextFillColor = '';
+    cardTitle.style.color = state.titleColor;
+  }
+
+  // body
+  cardBody.innerHTML = parseBody(state.body);
+  cardBody.style.color = state.bodyColor;
+  cardBody.style.fontSize = state.bodySize + 'px';
+  cardBody.style.textAlign = state.bodyAlign;
+  cardBody.style.setProperty('--card-body-color', state.bodyColor);
+
+  // watermark
+  const cardWatermark = $('card-watermark');
+  cardWatermark.textContent = state.watermark || '';
+  cardWatermark.style.fontSize = state.watermarkSize + 'px';
+  cardWatermark.style.color = state.bodyColor;
+
+  // labels
+  titleSizeVal.textContent = state.titleSize + 'px';
+  bodySizeVal.textContent = state.bodySize + 'px';
+  paddingVal.textContent = state.padding + 'px';
+  radiusVal.textContent = state.borderRadius + 'px';
+  $('title-body-gap-val').textContent = state.titleBodyGap + 'px';
+  $('bg-opacity-val').textContent = state.bgOpacity + '%';
+  $('watermark-size-val').textContent = state.watermarkSize + 'px';
+  $('img-zoom-val').textContent = Math.round(state.bgImageZoom * 100) + '%';
+  $('img-posx-val').textContent = state.bgImagePosX + '%';
+  $('img-posy-val').textContent = state.bgImagePosY + '%';
+  dimensionsLabel.textContent = state.width + ' × ' + state.height;
+  const expW = Math.round(state.width * state.exportQuality);
+  const expH = Math.round(state.height * state.exportQuality);
+  exportDimsLabel.textContent = expW + ' × ' + expH;
+  $('quality-detail').textContent = expW + ' × ' + expH + ' PNG';
+  $('bg-grad-angle-val').textContent = state.bgGradAngle + '°';
+  $('title-grad-angle-val').textContent = state.titleGradAngle + '°';
+
+  updateScale();
+  updatePresetActive();
+  saveState();
+}
+
+function updateScale() {
+  const availW = wrap.clientWidth - 40;
+  const availH = wrap.clientHeight - 40;
+  const cw = state.width;
+  const ch = state.height;
+  const fitScale = Math.min(availW / cw, availH / ch);
+  const scale = Math.min(fitScale, MAX_PREVIEW_SCALE);
+  card.style.transform = 'scale(' + scale + ')';
+  card.style.transformOrigin = 'top left';
+  stage.style.width = (cw * scale) + 'px';
+  stage.style.height = (ch * scale) + 'px';
+  scaleLabel.textContent = Math.round(scale * 100) + '%';
+}
+
+function updatePresetActive() {
+  document.querySelectorAll('#size-presets .preset-btn').forEach(btn => {
+    const w = parseInt(btn.dataset.w);
+    const h = parseInt(btn.dataset.h);
+    btn.classList.toggle('active', w === state.width && h === state.height);
+  });
+  setActiveSwatch('bg-swatches', state.bgColor);
+  setActiveSwatch('title-swatches', state.titleColor);
+  setActiveSwatch('body-swatches', state.bodyColor);
+  setActiveSwatch('accent-swatches', state.accentColor);
+
+  // segmented controls
+  document.querySelectorAll('[data-seg="bg-mode"] .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === state.bgMode);
+  });
+  document.querySelectorAll('[data-seg="title-mode"] .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === state.titleMode);
+  });
+  document.querySelectorAll('[data-seg="title-align"] .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === state.titleAlign);
+  });
+  document.querySelectorAll('[data-seg="body-align"] .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === state.bodyAlign);
+  });
+  document.querySelectorAll('[data-seg="export-quality"] .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', parseFloat(btn.dataset.value) === state.exportQuality);
+  });
+
+  // mode panels visibility
+  document.querySelectorAll('[data-panel]').forEach(p => {
+    const [type, mode] = p.dataset.panel.split('-');
+    if (type === 'bg') p.style.display = (state.bgMode === mode) ? 'block' : 'none';
+    if (type === 'title') p.style.display = (state.titleMode === mode) ? 'block' : 'none';
+  });
+
+  // gradient preset active states
+  document.querySelectorAll('#bg-gradient-presets .gradient-preset').forEach((p, i) => {
+    const preset = BG_GRADIENT_PRESETS[i];
+    const matches = state.bgGradStart === preset.start && state.bgGradEnd === preset.end && state.bgGradAngle === preset.angle;
+    p.classList.toggle('active', matches && state.bgMode === 'gradient');
+  });
+  document.querySelectorAll('#title-gradient-presets .gradient-preset').forEach((p, i) => {
+    const preset = TITLE_GRADIENT_PRESETS[i];
+    const matches = state.titleGradStart === preset.start && state.titleGradEnd === preset.end && state.titleGradAngle === preset.angle;
+    p.classList.toggle('active', matches && state.titleMode === 'gradient');
+  });
+}
+
+function setActiveSwatch(containerId, color) {
+  const c = color.toLowerCase();
+  document.querySelectorAll('#' + containerId + ' .color-swatch').forEach(sw => {
+    sw.classList.toggle('active', sw.dataset.color.toLowerCase() === c);
+  });
+}
+
+function buildSwatches(containerId, presets, stateKey, hexInputId, pickerInputId) {
+  const container = $(containerId);
+  container.innerHTML = '';
+  presets.forEach(color => {
+    const btn = document.createElement('button');
+    btn.className = 'color-swatch';
+    btn.style.background = color;
+    btn.dataset.color = color;
+    btn.title = color;
+    btn.addEventListener('click', () => setColor(stateKey, color, hexInputId, pickerInputId));
+    container.appendChild(btn);
+  });
+}
+
+function setColor(stateKey, color, hexInputId, pickerInputId) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) return;
+  state[stateKey] = color.toLowerCase();
+  $(hexInputId).value = color.toUpperCase();
+  $(pickerInputId).value = color.toLowerCase();
+  render();
+}
+
+function buildGradientPresets(containerId, presets, applyFn) {
+  const container = $(containerId);
+  container.innerHTML = '';
+  presets.forEach((preset, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'gradient-preset';
+    btn.style.background = `linear-gradient(${preset.angle}deg, ${preset.start}, ${preset.end})`;
+    btn.dataset.index = i;
+    btn.addEventListener('click', () => applyFn(preset));
+    container.appendChild(btn);
+  });
+}
+
+function applyBgGradientPreset(preset) {
+  state.bgGradStart = preset.start;
+  state.bgGradEnd = preset.end;
+  state.bgGradAngle = preset.angle;
+  $('bg-grad-start-hex').value = preset.start.toUpperCase();
+  $('bg-grad-start-picker').value = preset.start;
+  $('bg-grad-end-hex').value = preset.end.toUpperCase();
+  $('bg-grad-end-picker').value = preset.end;
+  $('bg-grad-angle').value = preset.angle;
+  render();
+}
+
+function applyTitleGradientPreset(preset) {
+  state.titleGradStart = preset.start;
+  state.titleGradEnd = preset.end;
+  state.titleGradAngle = preset.angle;
+  $('title-grad-start-hex').value = preset.start.toUpperCase();
+  $('title-grad-start-picker').value = preset.start;
+  $('title-grad-end-hex').value = preset.end.toUpperCase();
+  $('title-grad-end-picker').value = preset.end;
+  $('title-grad-angle').value = preset.angle;
+  render();
+}
+
+function applyTheme(name) {
+  const theme = THEMES[name];
+  if (!theme) return;
+  Object.assign(state, theme);
+  loadInputsFromState();
+  render();
+}
+
+function setupColorInput(hexId, pickerId, stateKey) {
+  const hex = $(hexId);
+  const picker = $(pickerId);
+  hex.addEventListener('input', () => {
+    let v = hex.value.trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      state[stateKey] = v.toLowerCase();
+      picker.value = v.toLowerCase();
+      render();
+    }
+  });
+  picker.addEventListener('input', () => {
+    state[stateKey] = picker.value.toLowerCase();
+    hex.value = picker.value.toUpperCase();
+    render();
+  });
+}
+
+function setupSegControl(segName, stateKey) {
+  document.querySelectorAll(`[data-seg="${segName}"] .seg-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      state[stateKey] = btn.dataset.value;
+      render();
+    });
+  });
+}
+
+function compressImage(file, maxDim, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round(h * (maxDim / w));
+          w = maxDim;
+        } else {
+          w = Math.round(w * (maxDim / h));
+          h = maxDim;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.88), w, h);
+    };
+    img.onerror = () => callback(null);
+    img.src = e.target.result;
+  };
+  reader.onerror = () => callback(null);
+  reader.readAsDataURL(file);
+}
+
+function handleImageUpload(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showToast('Please choose an image file', true);
+    return;
+  }
+  showToast('Processing image…');
+  compressImage(file, 2200, (dataUrl, w, h) => {
+    if (!dataUrl) {
+      showToast('Image failed to load', true);
+      return;
+    }
+    state.bgImage = dataUrl;
+    state.bgImageW = w;
+    state.bgImageH = h;
+    state.bgImageZoom = 1;
+    state.bgImagePosX = 50;
+    state.bgImagePosY = 50;
+    state.bgMode = 'image';
+    $('image-thumb').style.backgroundImage = `url("${dataUrl}")`;
+    $('image-info').textContent = `${w} × ${h}`;
+    $('image-upload-area').style.display = 'none';
+    $('image-preview').style.display = 'flex';
+    $('image-adjustments').style.display = 'block';
+    $('img-zoom').value = 100;
+    $('img-posx').value = 50;
+    $('img-posy').value = 50;
+    render();
+    showToast('Image loaded');
+  });
+}
+
+function transformCase(target, mode) {
+  const el = target === 'title' ? titleInput : bodyInput;
+  let text = el.value;
+  // Preserve **bold** markers: extract, transform inner text, reassemble
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const transformed = parts.map(part => {
+    const isBold = part.startsWith('**') && part.endsWith('**');
+    const raw = isBold ? part.slice(2, -2) : part;
+    let result;
+    switch (mode) {
+      case 'upper': result = raw.toUpperCase(); break;
+      case 'lower': result = raw.toLowerCase(); break;
+      case 'sentence':
+        // Lowercase everything, then capitalize after . ! ? and at start of each line
+        result = raw.toLowerCase().replace(/(^|[.!?]\s+|^\d+\.\s*)([a-záéíóúñü])/gm,
+          (m, pre, ch) => pre + ch.toUpperCase());
+        break;
+      case 'title':
+        result = raw.toLowerCase().replace(/(^|\s)([a-záéíóúñü])/g,
+          (m, sp, ch) => sp + ch.toUpperCase());
+        break;
+    }
+    return isBold ? '**' + result + '**' : result;
+  }).join('');
+  el.value = transformed;
+  if (target === 'title') { state.title = transformed; }
+  else { state.body = transformed; }
+  render();
+}
+
+function attachEvents() {
+  // theme buttons
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+  });
+
+  titleInput.addEventListener('input', () => { state.title = titleInput.value; render(); });
+  bodyInput.addEventListener('input', () => { state.body = bodyInput.value; render(); });
+
+  widthInput.addEventListener('input', () => {
+    const v = parseInt(widthInput.value);
+    if (v >= 100 && v <= 4000) { state.width = v; render(); }
+  });
+  heightInput.addEventListener('input', () => {
+    const v = parseInt(heightInput.value);
+    if (v >= 100 && v <= 4000) { state.height = v; render(); }
+  });
+  document.querySelectorAll('#size-presets .preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.width = parseInt(btn.dataset.w);
+      state.height = parseInt(btn.dataset.h);
+      widthInput.value = state.width;
+      heightInput.value = state.height;
+      render();
+    });
+  });
+
+  // bg mode + colors
+  setupSegControl('bg-mode', 'bgMode');
+  setupColorInput('bg-hex', 'bg-picker', 'bgColor');
+  setupColorInput('bg-grad-start-hex', 'bg-grad-start-picker', 'bgGradStart');
+  setupColorInput('bg-grad-end-hex', 'bg-grad-end-picker', 'bgGradEnd');
+  $('bg-grad-angle').addEventListener('input', () => {
+    state.bgGradAngle = parseInt($('bg-grad-angle').value);
+    render();
+  });
+  $('bg-opacity').addEventListener('input', () => {
+    state.bgOpacity = parseInt($('bg-opacity').value);
+    render();
+  });
+
+  // title mode + colors
+  setupSegControl('title-mode', 'titleMode');
+  setupColorInput('title-hex', 'title-picker', 'titleColor');
+  setupColorInput('title-grad-start-hex', 'title-grad-start-picker', 'titleGradStart');
+  setupColorInput('title-grad-end-hex', 'title-grad-end-picker', 'titleGradEnd');
+  $('title-grad-angle').addEventListener('input', () => {
+    state.titleGradAngle = parseInt($('title-grad-angle').value);
+    render();
+  });
+
+  // body + accent
+  setupColorInput('body-hex', 'body-picker', 'bodyColor');
+  setupColorInput('accent-hex', 'accent-picker', 'accentColor');
+
+  // sliders
+  titleSizeInput.addEventListener('input', () => { state.titleSize = parseInt(titleSizeInput.value); render(); });
+  bodySizeInput.addEventListener('input', () => { state.bodySize = parseInt(bodySizeInput.value); render(); });
+  paddingInput.addEventListener('input', () => { state.padding = parseInt(paddingInput.value); render(); });
+  borderRadiusInput.addEventListener('input', () => { state.borderRadius = parseInt(borderRadiusInput.value); render(); });
+  $('title-body-gap').addEventListener('input', () => { state.titleBodyGap = parseInt($('title-body-gap').value); render(); });
+
+  // watermark
+  $('watermark-input').addEventListener('input', () => {
+    state.watermark = $('watermark-input').value;
+    render();
+  });
+  $('watermark-size').addEventListener('input', () => {
+    state.watermarkSize = parseInt($('watermark-size').value);
+    render();
+  });
+
+  // image zoom + pan
+  $('img-zoom').addEventListener('input', () => {
+    state.bgImageZoom = parseInt($('img-zoom').value) / 100;
+    render();
+  });
+  $('img-posx').addEventListener('input', () => {
+    state.bgImagePosX = parseInt($('img-posx').value);
+    render();
+  });
+  $('img-posy').addEventListener('input', () => {
+    state.bgImagePosY = parseInt($('img-posy').value);
+    render();
+  });
+
+  // alignment seg controls
+  document.querySelectorAll('[data-seg="title-align"] .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => { state.titleAlign = btn.dataset.value; render(); });
+  });
+  document.querySelectorAll('[data-seg="body-align"] .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => { state.bodyAlign = btn.dataset.value; render(); });
+  });
+
+  // export quality
+  document.querySelectorAll('[data-seg="export-quality"] .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.exportQuality = parseFloat(btn.dataset.value);
+      render();
+    });
+  });
+
+  // Ctrl/Cmd + B bold shortcut on body textarea
+  attachBoldShortcut(bodyInput);
+
+  // image upload
+  const imageInput = $('bg-image-input');
+  $('image-upload-area').addEventListener('click', () => imageInput.click());
+  imageInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleImageUpload(e.target.files[0]);
+      imageInput.value = '';
+    }
+  });
+  $('bg-image-remove').addEventListener('click', () => {
+    state.bgImage = null;
+    state.bgImageW = 0;
+    state.bgImageH = 0;
+    $('image-thumb').style.backgroundImage = '';
+    $('image-upload-area').style.display = 'block';
+    $('image-preview').style.display = 'none';
+    $('image-adjustments').style.display = 'none';
+    render();
+  });
+
+  exportBtn.addEventListener('click', exportPNG);
+  resetBtn.addEventListener('click', () => {
+    if (confirm('Reset everything to defaults? Current content and styling will be replaced.')) {
+      state = Object.assign({}, DEFAULTS);
+      $('image-thumb').style.backgroundImage = '';
+      $('image-upload-area').style.display = 'block';
+      $('image-preview').style.display = 'none';
+      $('image-adjustments').style.display = 'none';
+      loadInputsFromState();
+      render();
+    }
+  });
+
+  window.addEventListener('resize', updateScale);
+}
+
+function attachBoldShortcut(textarea) {
+  textarea.addEventListener('keydown', (e) => {
+    const isCtrl = e.ctrlKey || e.metaKey;
+    if (!isCtrl) return;
+    if (e.key !== 'b' && e.key !== 'B') return;
+    e.preventDefault();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    let newText, newStart, newEnd;
+    if (start === end) {
+      // No selection: insert ** with cursor in the middle
+      newText = text.substring(0, start) + '****' + text.substring(end);
+      newStart = newEnd = start + 2;
+    } else {
+      const selected = text.substring(start, end);
+      const wrappedInside = selected.length >= 4 && selected.startsWith('**') && selected.endsWith('**');
+      const wrappedOutside = start >= 2 && end <= text.length - 2 &&
+        text.substring(start - 2, start) === '**' &&
+        text.substring(end, end + 2) === '**';
+      if (wrappedInside) {
+        const inner = selected.substring(2, selected.length - 2);
+        newText = text.substring(0, start) + inner + text.substring(end);
+        newStart = start;
+        newEnd = start + inner.length;
+      } else if (wrappedOutside) {
+        newText = text.substring(0, start - 2) + selected + text.substring(end + 2);
+        newStart = start - 2;
+        newEnd = end - 2;
+      } else {
+        newText = text.substring(0, start) + '**' + selected + '**' + text.substring(end);
+        newStart = start + 2;
+        newEnd = end + 2;
+      }
+    }
+    textarea.value = newText;
+    textarea.setSelectionRange(newStart, newEnd);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+async function exportPNG() {
+  if (typeof htmlToImage === 'undefined') {
+    showToast('Export library failed to load. Check internet and reload.', true);
+    return;
+  }
+  exportBtn.disabled = true;
+  const originalText = exportBtn.textContent;
+  exportBtn.textContent = 'Exporting…';
+  try {
+    // The live card has transform: scale(...) for preview. Pass style:{transform:none}
+    // so html-to-image applies it to its internal clone, capturing at full size.
+    const dataUrl = await htmlToImage.toPng(card, {
+      pixelRatio: state.exportQuality,
+      width: state.width,
+      height: state.height,
+      cacheBust: true,
+      style: {
+        transform: 'none',
+        transformOrigin: '0 0'
+      }
+    });
+    if (!dataUrl || dataUrl.length < 1000) {
+      throw new Error('Generated PNG is empty');
+    }
+    const qSuffix = state.exportQuality === 0.5 ? 'half' : (state.exportQuality === 1 ? '1x' : '2x');
+    const filename = 'card-' + state.width + 'x' + state.height + '-' + qSuffix + '-' + Date.now() + '.png';
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('PNG exported');
+  } catch (err) {
+    console.error('Export error:', err);
+    showToast('Export failed: ' + (err.message || 'unknown error'), true);
+  } finally {
+    exportBtn.disabled = false;
+    exportBtn.textContent = originalText;
+  }
+}
+
+let toastTimer;
+function showToast(msg, isError) {
+  toast.textContent = msg;
+  toast.classList.toggle('error', !!isError);
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function saveState() {
+  try {
+    const toSave = Object.assign({}, state);
+    delete toSave.bgImage; // too large for localStorage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (e) { /* ignore */ }
+}
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    state = Object.assign({}, DEFAULTS, parsed);
+    // If saved had image mode but no image (since not saved), fall back to solid
+    if (state.bgMode === 'image' && !state.bgImage) {
+      state.bgMode = 'solid';
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function loadInputsFromState() {
+  titleInput.value = state.title;
+  bodyInput.value = state.body;
+  widthInput.value = state.width;
+  heightInput.value = state.height;
+  $('bg-hex').value = state.bgColor.toUpperCase();
+  $('bg-picker').value = state.bgColor;
+  $('bg-grad-start-hex').value = state.bgGradStart.toUpperCase();
+  $('bg-grad-start-picker').value = state.bgGradStart;
+  $('bg-grad-end-hex').value = state.bgGradEnd.toUpperCase();
+  $('bg-grad-end-picker').value = state.bgGradEnd;
+  $('bg-grad-angle').value = state.bgGradAngle;
+  $('bg-opacity').value = state.bgOpacity;
+  $('title-hex').value = state.titleColor.toUpperCase();
+  $('title-picker').value = state.titleColor;
+  $('title-grad-start-hex').value = state.titleGradStart.toUpperCase();
+  $('title-grad-start-picker').value = state.titleGradStart;
+  $('title-grad-end-hex').value = state.titleGradEnd.toUpperCase();
+  $('title-grad-end-picker').value = state.titleGradEnd;
+  $('title-grad-angle').value = state.titleGradAngle;
+  $('body-hex').value = state.bodyColor.toUpperCase();
+  $('body-picker').value = state.bodyColor;
+  $('accent-hex').value = state.accentColor.toUpperCase();
+  $('accent-picker').value = state.accentColor;
+  titleSizeInput.value = state.titleSize;
+  bodySizeInput.value = state.bodySize;
+  paddingInput.value = state.padding;
+  borderRadiusInput.value = state.borderRadius;
+  $('title-body-gap').value = state.titleBodyGap;
+  $('watermark-input').value = state.watermark;
+  $('watermark-size').value = state.watermarkSize;
+  $('img-zoom').value = Math.round(state.bgImageZoom * 100);
+  $('img-posx').value = state.bgImagePosX;
+  $('img-posy').value = state.bgImagePosY;
+}
+
+function init() {
+  buildSwatches('bg-swatches', BG_PRESETS, 'bgColor', 'bg-hex', 'bg-picker');
+  buildSwatches('title-swatches', TITLE_PRESETS, 'titleColor', 'title-hex', 'title-picker');
+  buildSwatches('body-swatches', BODY_PRESETS, 'bodyColor', 'body-hex', 'body-picker');
+  buildSwatches('accent-swatches', ACCENT_PRESETS, 'accentColor', 'accent-hex', 'accent-picker');
+  buildGradientPresets('bg-gradient-presets', BG_GRADIENT_PRESETS, applyBgGradientPreset);
+  buildGradientPresets('title-gradient-presets', TITLE_GRADIENT_PRESETS, applyTitleGradientPreset);
+  loadState();
+  loadInputsFromState();
+  attachEvents();
+  render();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+
+</body>
+</html>
